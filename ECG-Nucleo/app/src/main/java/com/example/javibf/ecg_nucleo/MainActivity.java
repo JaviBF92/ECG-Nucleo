@@ -1,8 +1,9 @@
 package com.example.javibf.ecg_nucleo;
 
-import android.support.v7.app.AppCompatActivity;
+import android.content.res.ColorStateList;
 import android.os.Bundle;
-import android.view.View;
+import android.support.v7.app.AppCompatActivity;
+import android.widget.TextView;
 
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.XAxis;
@@ -14,18 +15,28 @@ import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
+import app.akexorcist.bluetotohspp.library.BluetoothSPP;
 
+/**
+ * Created by javibf on 12/08/16.
+ */
 public class MainActivity extends AppCompatActivity {
 
     private LineChart chart;
+    BluetoothSPP bt;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         chart = (LineChart) findViewById(R.id.chart);
+        chart.setTouchEnabled(false);
+        XAxis xAxis = chart.getXAxis();
+        xAxis.setEnabled(false);
+
+        bt = new BluetoothSPP(getApplicationContext());
+
 
         List<Entry> list = new ArrayList<>();
         list.add(new Entry(0, 1f));
@@ -38,7 +49,21 @@ public class MainActivity extends AppCompatActivity {
         chart.setData(linedata);
 
 
-        incrementa();
+
+    }
+
+    protected void onStart(){
+        super.onStart();
+        if(bt.isBluetoothAvailable()) {
+            incrementa();
+        } else {
+            TextView msg = (TextView) findViewById(R.id.msg);
+
+            msg.setTextColor(0xffff0000);
+            msg.setText("Bluetooth not enabled.");
+        }
+
+
     }
 
     public void incrementa(){
