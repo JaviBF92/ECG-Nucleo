@@ -1,8 +1,13 @@
 package com.example.javibf.ecg_nucleo;
 
-import android.content.res.ColorStateList;
+import android.bluetooth.BluetoothAdapter;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.view.View;
 import android.widget.TextView;
 
 import com.github.mikephil.charting.charts.LineChart;
@@ -24,19 +29,24 @@ import app.akexorcist.bluetotohspp.library.BluetoothSPP;
 public class MainActivity extends AppCompatActivity {
 
     private LineChart chart;
-    BluetoothSPP bt;
+    private BluetoothSPP bt;
+    MyBroadcastReceiver mReceiver = new MyBroadcastReceiver();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+
+        IntentFilter filter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
+        registerReceiver(mReceiver, filter);
+
         chart = (LineChart) findViewById(R.id.chart);
         chart.setTouchEnabled(false);
         XAxis xAxis = chart.getXAxis();
         xAxis.setEnabled(false);
 
         bt = new BluetoothSPP(getApplicationContext());
-
 
         List<Entry> list = new ArrayList<>();
         list.add(new Entry(0, 1f));
@@ -48,22 +58,20 @@ public class MainActivity extends AppCompatActivity {
         LineData linedata = new LineData(data);
         chart.setData(linedata);
 
-
-
     }
 
     protected void onStart(){
         super.onStart();
-        if(bt.isBluetoothAvailable()) {
-            incrementa();
-        } else {
-            TextView msg = (TextView) findViewById(R.id.msg);
 
-            msg.setTextColor(0xffff0000);
-            msg.setText("Bluetooth not enabled.");
-        }
+    }
 
+    protected void onResume(){
+        super.onResume();
+    }
 
+    public void onDestroy() {
+        super.onDestroy();
+        unregisterReceiver(mReceiver);
     }
 
     public void incrementa(){
@@ -73,6 +81,30 @@ public class MainActivity extends AppCompatActivity {
         data.notifyDataChanged();
         chart.notifyDataSetChanged();
         chart.moveViewToX(data.getEntryCount());
+    }
+
+    private class MyBroadcastReceiver extends BroadcastReceiver{
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            final String action = intent.getAction();
+
+            if (action.equals(BluetoothAdapter.ACTION_STATE_CHANGED)) {
+                final int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE,
+                        BluetoothAdapter.ERROR);
+                switch (state) {
+                    case BluetoothAdapter.STATE_OFF:
+                        TextView msg = (TextView) findViewById(R.id.msg);
+                        msg.setVisibility(View.VISIBLE);
+                        msg.setTextColor(0xffff0000);
+                        msg.setText("Bluetooth not enabled.");
+                        break;
+                    case BluetoothAdapter.STATE_ON:
+                        TextView tv = (TextView) findViewById(R.id.msg);
+                        tv.setVisibility(View.GONE);
+                        break;
+                }
+            }
+        }
     }
 
 }
