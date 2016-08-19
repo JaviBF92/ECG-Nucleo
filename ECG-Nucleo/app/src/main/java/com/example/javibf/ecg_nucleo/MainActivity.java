@@ -31,7 +31,9 @@ import io.palaima.smoothbluetooth.SmoothBluetooth;
 public class MainActivity extends AppCompatActivity {
 
     private LineChart chart;
+
     private TextView msg;
+
     private String address = "00:06:71:00:2D:C0";
     MyBroadcastReceiver mReceiver = new MyBroadcastReceiver();
     private SmoothBluetooth mSmoothBluetooth;
@@ -47,99 +49,9 @@ public class MainActivity extends AppCompatActivity {
 
         chart = (LineChart) findViewById(R.id.chart);
         msg = (TextView) findViewById(R.id.msg);
+
         mSmoothBluetooth = new SmoothBluetooth(this, SmoothBluetooth.ConnectionTo.OTHER_DEVICE,
-                SmoothBluetooth.Connection.INSECURE,
-                new SmoothBluetooth.Listener() {
-                    @Override
-                    public void onBluetoothNotSupported() {
-                        //device does not support bluetooth
-                        msg.setVisibility(View.VISIBLE);
-                        msg.setTextColor(0xffff0000);
-                        msg.setText("Bluetooth not supported.");
-                    }
-
-                    @Override
-                    public void onBluetoothNotEnabled() {
-                        //bluetooth is disabled, probably call Intent request to enable bluetooth
-                        msg.setVisibility(View.VISIBLE);
-                        msg.setTextColor(0xffff0000);
-                        msg.setText("Bluetooth not enabled.");
-                    }
-
-                    @Override
-                    public void onConnecting(Device device) {
-                        //called when connecting to particular device
-                    }
-
-                    @Override
-                    public void onConnected(Device device) {
-                        //called when connected to particular device
-                    }
-
-                    @Override
-                    public void onDisconnected() {
-                        //called when disconnected from device
-                    }
-
-                    @Override
-                    public void onConnectionFailed(Device device) {
-                        //called when connection failed to particular device
-                        msg.setVisibility(View.VISIBLE);
-                        msg.setTextColor(0xffff0000);
-                        msg.setText("Connection failure. Retrying...");
-                        mSmoothBluetooth.tryConnection();
-                    }
-
-                    @Override
-                    public void onDiscoveryStarted() {
-                        //called when discovery is started
-                    }
-
-                    @Override
-                    public void onDiscoveryFinished() {
-                        //called when discovery is finished
-                    }
-
-                    @Override
-                    public void onNoDevicesFound() {
-                        //called when no devices found
-                    }
-
-                    @Override
-                    public void onDevicesFound(final List<Device> deviceList,
-                                               final SmoothBluetooth.ConnectionCallback connectionCallback) {
-                        //receives discovered devices list and connection callback
-                        //you can filter devices list and connect to specific one
-                        //connectionCallback.connectTo(deviceList.get(position));
-                        for(Device d: deviceList){
-                            if(address.equals(d.getAddress())){
-                                connectionCallback.connectTo(d);
-                            }
-                        }
-                        msg.setVisibility(View.VISIBLE);
-                        msg.setTextColor(0xffff0000);
-                        msg.setText("Connected");
-                    }
-
-                    @Override
-                    public void onDataReceived(int data) {
-                        //receives all bytes
-                        char c = (char)data;
-                        buff.append(c);
-                        String pattern = "\\{.{4}\\}";
-                        Pattern p = Pattern.compile(pattern);
-                        Matcher match = p.matcher(buff);
-                            //regular expression: {....}
-                        while(match.find()){
-                            String s = buff.substring(match.start(), match.end());
-                            String value = s.substring(1, s.length()-1);
-                            System.out.println(value);
-                            addData(value);
-                            buff.delete(0, match.end());
-                        }
-
-                    }
-                });
+                SmoothBluetooth.Connection.INSECURE, mListener);
 
         chart.setTouchEnabled(false);
         XAxis xAxis = chart.getXAxis();
@@ -154,23 +66,19 @@ public class MainActivity extends AppCompatActivity {
 
         LineData linedata = new LineData(data);
         chart.setData(linedata);
-
     }
 
     protected void onStart(){
         super.onStart();
         mSmoothBluetooth.tryConnection();
-
     }
 
     protected void onResume(){
         super.onResume();
-
     }
 
     public void onDestroy() {
         super.onDestroy();
-        //bt.stopService();
         mSmoothBluetooth.stop();
         unregisterReceiver(mReceiver);
     }
@@ -185,6 +93,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private class MyBroadcastReceiver extends BroadcastReceiver{
+
         @Override
         public void onReceive(Context context, Intent intent) {
             final String action = intent.getAction();
@@ -192,13 +101,14 @@ public class MainActivity extends AppCompatActivity {
             if (action.equals(BluetoothAdapter.ACTION_STATE_CHANGED)) {
                 final int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE,
                         BluetoothAdapter.ERROR);
+
                 switch (state) {
                     case BluetoothAdapter.STATE_OFF:
                         msg.setVisibility(View.VISIBLE);
                         msg.setTextColor(0xffff0000);
                         msg.setText("Bluetooth not enabled.");
-                        //bt.stopService();
                         break;
+
                     case BluetoothAdapter.STATE_ON:
                         msg.setVisibility(View.GONE);
                         mSmoothBluetooth.tryConnection();
@@ -207,5 +117,96 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     }
+
+    private SmoothBluetooth.Listener mListener = new SmoothBluetooth.Listener() {
+
+        @Override
+        public void onBluetoothNotSupported() {
+            //device does not support bluetooth
+            msg.setVisibility(View.VISIBLE);
+            msg.setTextColor(0xffff0000);
+            msg.setText("Bluetooth not supported.");
+        }
+
+        @Override
+        public void onBluetoothNotEnabled() {
+            //bluetooth is disabled, probably call Intent request to enable bluetooth
+            msg.setVisibility(View.VISIBLE);
+            msg.setTextColor(0xffff0000);
+            msg.setText("Bluetooth not enabled.");
+        }
+
+        @Override
+        public void onConnecting(Device device) {
+            //called when connecting to particular device
+        }
+
+        @Override
+        public void onConnected(Device device) {
+            //called when connected to particular device
+            msg.setVisibility(View.GONE);
+        }
+
+        @Override
+        public void onDisconnected() {
+            //called when disconnected from device
+        }
+
+        @Override
+        public void onConnectionFailed(Device device) {
+            //called when connection failed to particular device
+            mSmoothBluetooth.tryConnection();
+        }
+
+        @Override
+        public void onDiscoveryStarted() {
+            //called when discovery is started
+        }
+
+        @Override
+        public void onDiscoveryFinished() {
+            //called when discovery is finished
+        }
+
+        @Override
+        public void onNoDevicesFound() {
+            //called when no devices found
+        }
+
+        @Override
+        public void onDevicesFound(final List<Device> deviceList,
+                                   final SmoothBluetooth.ConnectionCallback connectionCallback) {
+            //receives discovered devices list and connection callback
+            //you can filter devices list and connect to specific one
+            //connectionCallback.connectTo(deviceList.get(position));
+            for(Device d: deviceList){
+                if(address.equals(d.getAddress())){
+                    connectionCallback.connectTo(d);
+                }
+            }
+
+            msg.setVisibility(View.VISIBLE);
+            msg.setTextColor(0xffff0000);
+            msg.setText("Connecting...");
+        }
+
+        @Override
+        public void onDataReceived(int data) {
+            //receives all bytes
+            char c = (char)data;
+            buff.append(c);
+            String pattern = "\\{.{4}\\}";
+            Pattern p = Pattern.compile(pattern);
+            Matcher match = p.matcher(buff);
+
+            while(match.find()){
+                String s = buff.substring(match.start(), match.end());
+                String value = s.substring(1, s.length()-1);
+                System.out.println(value);
+                addData(value);
+                buff.delete(0, match.end());
+            }
+        }
+    };
 
 }
