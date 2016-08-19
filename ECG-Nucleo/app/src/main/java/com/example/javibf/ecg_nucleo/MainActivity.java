@@ -2,6 +2,7 @@ package com.example.javibf.ecg_nucleo;
 
 import android.bluetooth.BluetoothAdapter;
 import android.content.BroadcastReceiver;
+
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -20,33 +21,129 @@ import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import app.akexorcist.bluetotohspp.library.BluetoothSPP;
+import io.palaima.smoothbluetooth.Device;
+import io.palaima.smoothbluetooth.SmoothBluetooth;
 
-/**
- * Created by javibf on 12/08/16.
- */
+
 public class MainActivity extends AppCompatActivity {
 
     private LineChart chart;
-    private BluetoothSPP bt;
+    private TextView msg;
+    private String address = "00:06:71:00:2D:C0";
     MyBroadcastReceiver mReceiver = new MyBroadcastReceiver();
+    private SmoothBluetooth mSmoothBluetooth;
+    private StringBuffer buff = new StringBuffer();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-
         IntentFilter filter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
         registerReceiver(mReceiver, filter);
 
         chart = (LineChart) findViewById(R.id.chart);
+        msg = (TextView) findViewById(R.id.msg);
+        mSmoothBluetooth = new SmoothBluetooth(this, SmoothBluetooth.ConnectionTo.OTHER_DEVICE,
+                SmoothBluetooth.Connection.INSECURE,
+                new SmoothBluetooth.Listener() {
+                    @Override
+                    public void onBluetoothNotSupported() {
+                        //device does not support bluetooth
+                        msg.setVisibility(View.VISIBLE);
+                        msg.setTextColor(0xffff0000);
+                        msg.setText("Bluetooth not supported.");
+                    }
+
+                    @Override
+                    public void onBluetoothNotEnabled() {
+                        //bluetooth is disabled, probably call Intent request to enable bluetooth
+                        msg.setVisibility(View.VISIBLE);
+                        msg.setTextColor(0xffff0000);
+                        msg.setText("Bluetooth not enabled.");
+                    }
+
+                    @Override
+                    public void onConnecting(Device device) {
+                        //called when connecting to particular device
+                    }
+
+                    @Override
+                    public void onConnected(Device device) {
+                        //called when connected to particular device
+                    }
+
+                    @Override
+                    public void onDisconnected() {
+                        //called when disconnected from device
+                    }
+
+                    @Override
+                    public void onConnectionFailed(Device device) {
+                        //called when connection failed to particular device
+                        msg.setVisibility(View.VISIBLE);
+                        msg.setTextColor(0xffff0000);
+                        msg.setText("Connection failure. Retrying...");
+                        mSmoothBluetooth.tryConnection();
+                    }
+
+                    @Override
+                    public void onDiscoveryStarted() {
+                        //called when discovery is started
+                    }
+
+                    @Override
+                    public void onDiscoveryFinished() {
+                        //called when discovery is finished
+                    }
+
+                    @Override
+                    public void onNoDevicesFound() {
+                        //called when no devices found
+                    }
+
+                    @Override
+                    public void onDevicesFound(final List<Device> deviceList,
+                                               final SmoothBluetooth.ConnectionCallback connectionCallback) {
+                        //receives discovered devices list and connection callback
+                        //you can filter devices list and connect to specific one
+                        //connectionCallback.connectTo(deviceList.get(position));
+                        for(Device d: deviceList){
+                            if(address.equals(d.getAddress())){
+                                connectionCallback.connectTo(d);
+                            }
+                        }
+                        msg.setVisibility(View.VISIBLE);
+                        msg.setTextColor(0xffff0000);
+                        msg.setText("Connected");
+                    }
+
+                    @Override
+                    public void onDataReceived(int data) {
+                        //receives all bytes
+                        char c = (char)data;
+                        buff.append(c);
+                        String pattern = "\\{.{4}\\}";
+                        Pattern p = Pattern.compile(pattern);
+                        Matcher match = p.matcher(buff);
+                            //regular expression: {....}
+                        while(match.find()){
+                            String s = buff.substring(match.start(), match.end());
+                            String value = s.substring(1, s.length()-1);
+                            System.out.println(value);
+                            addData(value);
+                            buff.delete(0, match.end());
+                        }
+
+                    }
+                });
+
         chart.setTouchEnabled(false);
         XAxis xAxis = chart.getXAxis();
         xAxis.setEnabled(false);
-
-        bt = new BluetoothSPP(getApplicationContext());
 
         List<Entry> list = new ArrayList<>();
         list.add(new Entry(0, 1f));
@@ -62,22 +159,26 @@ public class MainActivity extends AppCompatActivity {
 
     protected void onStart(){
         super.onStart();
+        mSmoothBluetooth.tryConnection();
 
     }
 
     protected void onResume(){
         super.onResume();
+
     }
 
     public void onDestroy() {
         super.onDestroy();
+        //bt.stopService();
+        mSmoothBluetooth.stop();
         unregisterReceiver(mReceiver);
     }
 
-    public void incrementa(){
+    public void addData(String value){
         LineData data = chart.getData();
         ILineDataSet set = data.getDataSetByIndex(0);
-        data.addEntry(new Entry(set.getEntryCount(), 0.6f), 0);
+        data.addEntry(new Entry(set.getEntryCount(), Float.parseFloat(value)), 0);
         data.notifyDataChanged();
         chart.notifyDataSetChanged();
         chart.moveViewToX(data.getEntryCount());
@@ -93,14 +194,14 @@ public class MainActivity extends AppCompatActivity {
                         BluetoothAdapter.ERROR);
                 switch (state) {
                     case BluetoothAdapter.STATE_OFF:
-                        TextView msg = (TextView) findViewById(R.id.msg);
                         msg.setVisibility(View.VISIBLE);
                         msg.setTextColor(0xffff0000);
                         msg.setText("Bluetooth not enabled.");
+                        //bt.stopService();
                         break;
                     case BluetoothAdapter.STATE_ON:
-                        TextView tv = (TextView) findViewById(R.id.msg);
-                        tv.setVisibility(View.GONE);
+                        msg.setVisibility(View.GONE);
+                        mSmoothBluetooth.tryConnection();
                         break;
                 }
             }
