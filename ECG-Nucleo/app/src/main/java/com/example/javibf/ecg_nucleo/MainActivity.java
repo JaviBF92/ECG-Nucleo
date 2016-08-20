@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.support.annotation.IntegerRes;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.TextView;
@@ -34,6 +35,7 @@ public class MainActivity extends AppCompatActivity {
 
     private TextView msg;
 
+    private Integer entryNumber = 40;
     private String address = "00:06:71:00:2D:C0";
     MyBroadcastReceiver mReceiver = new MyBroadcastReceiver();
     private SmoothBluetooth mSmoothBluetooth;
@@ -54,13 +56,18 @@ public class MainActivity extends AppCompatActivity {
                 SmoothBluetooth.Connection.INSECURE, mListener);
 
         chart.setTouchEnabled(false);
+
         XAxis xAxis = chart.getXAxis();
+        YAxis yAxisL  = chart.getAxisLeft();
+        YAxis yAxisR  = chart.getAxisRight();
         xAxis.setEnabled(false);
+        xAxis.setAxisMaxValue(entryNumber);
+        yAxisL.setAxisMinValue(0);
+        yAxisR.setAxisMinValue(0);
+        yAxisL.setAxisMaxValue(10);
+        yAxisR.setAxisMaxValue(10);
 
         List<Entry> list = new ArrayList<>();
-        list.add(new Entry(0, 1f));
-        list.add(new Entry(1, 0.1f));
-        list.add(new Entry(2, 0.5f));
         LineDataSet data = new LineDataSet(list, "Valores");
         data.setAxisDependency(YAxis.AxisDependency.LEFT);
 
@@ -84,9 +91,20 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void addData(String value){
+
         LineData data = chart.getData();
         ILineDataSet set = data.getDataSetByIndex(0);
-        data.addEntry(new Entry(set.getEntryCount(), Float.parseFloat(value)), 0);
+        Integer entryCount = set.getEntryCount();
+
+        data.addEntry(new Entry(entryCount, Float.parseFloat(value)), 0);
+
+        XAxis xAxis = chart.getXAxis();
+
+        if(entryCount >= entryNumber){
+            xAxis.setAxisMinValue(entryCount - entryNumber);
+            xAxis.resetAxisMaxValue();
+        }
+
         data.notifyDataChanged();
         chart.notifyDataSetChanged();
         chart.moveViewToX(data.getEntryCount());
