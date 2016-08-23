@@ -35,7 +35,7 @@ public class MainActivity extends AppCompatActivity {
 
     private TextView msg;
 
-    private Integer entryNumber = 40;
+    private Integer entryNumber = 60;
     private String address = "00:06:71:00:2D:C0";
     MyBroadcastReceiver mReceiver = new MyBroadcastReceiver();
     private SmoothBluetooth mSmoothBluetooth;
@@ -64,11 +64,14 @@ public class MainActivity extends AppCompatActivity {
         xAxis.setAxisMaxValue(entryNumber);
         yAxisL.setAxisMinValue(0);
         yAxisR.setAxisMinValue(0);
-        yAxisL.setAxisMaxValue(10);
-        yAxisR.setAxisMaxValue(10);
+        yAxisL.setAxisMaxValue(1);
+        yAxisR.setAxisMaxValue(1);
+        yAxisR.setDrawLabels(false);
 
         List<Entry> list = new ArrayList<>();
-        LineDataSet data = new LineDataSet(list, "Valores");
+        LineDataSet data = new LineDataSet(list, "Señal");
+        data.setDrawValues(false);
+        data.setDrawCircles(false);
         data.setAxisDependency(YAxis.AxisDependency.LEFT);
 
         LineData linedata = new LineData(data);
@@ -157,6 +160,9 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onConnecting(Device device) {
             //called when connecting to particular device
+            msg.setVisibility(View.VISIBLE);
+            msg.setTextColor(0xffff0000);
+            msg.setText("Connecting...");
         }
 
         @Override
@@ -189,6 +195,9 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onNoDevicesFound() {
             //called when no devices found
+            msg.setVisibility(View.VISIBLE);
+            msg.setTextColor(0xffff0000);
+            msg.setText("Device not found");
         }
 
         @Override
@@ -203,9 +212,6 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
 
-            msg.setVisibility(View.VISIBLE);
-            msg.setTextColor(0xffff0000);
-            msg.setText("Connecting...");
         }
 
         @Override
@@ -220,7 +226,6 @@ public class MainActivity extends AppCompatActivity {
             while(match.find()){
                 String s = buff.substring(match.start(), match.end());
                 String value = s.substring(1, s.length()-1);
-                System.out.println(value);
                 addData(value);
                 buff.delete(0, match.end());
             }
