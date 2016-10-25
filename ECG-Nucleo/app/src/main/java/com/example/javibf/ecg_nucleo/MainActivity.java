@@ -119,9 +119,7 @@ public class MainActivity extends AppCompatActivity {
         Integer entryCount = set.getEntryCount();
 
         Float fValue = Float.parseFloat(value);
-        /*if(entryCount % 20 == 0)
-            fValue = 0.7f;
-*/
+
         if(entryCount > 2) {
             float yLast1 = set.getEntryForIndex(entryCount - 2).getY();
             float yLast2 = set.getEntryForIndex(entryCount - 1).getY();
@@ -129,11 +127,8 @@ public class MainActivity extends AppCompatActivity {
                 pulse ++;
             }
         }
-
-        data.removeDataSet(0);
-        set.addEntry(new Entry(entryCount, fValue));
-        data.addDataSet(set);
-        //data.addEntry(new Entry(entryCount, fValue), 0);
+        
+        data.addEntry(new Entry(entryCount, fValue), 0);
 
         XAxis xAxis = chart.getXAxis();
 
@@ -145,7 +140,6 @@ public class MainActivity extends AppCompatActivity {
         data.notifyDataChanged();
         chart.notifyDataSetChanged();
         chart.moveViewToX(data.getEntryCount());
-
     }
 
     private class MyBroadcastReceiver extends BroadcastReceiver{
@@ -209,6 +203,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onDisconnected() {
             //called when disconnected from device
+            mSmoothBluetooth.tryConnection();
         }
 
         @Override
@@ -244,6 +239,7 @@ public class MainActivity extends AppCompatActivity {
             for(Device d: deviceList){
                 if(address.equals(d.getAddress())){
                     connectionCallback.connectTo(d);
+                    break;
                 }
             }
 
