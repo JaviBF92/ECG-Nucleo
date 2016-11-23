@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import serial, re
 
-frec = 25
+frec =40
 buff = ""
 
 nucleo = serial.Serial('/dev/ttyACM0', 115200, timeout = 1)
