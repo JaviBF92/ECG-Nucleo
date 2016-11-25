@@ -47,6 +47,8 @@ public class MainActivity extends AppCompatActivity {
     private long timelapse;
     private int pulse;
 
+    private List<Float> limit;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -66,6 +68,9 @@ public class MainActivity extends AppCompatActivity {
         buff = new StringBuffer();
         timelapse = 0L;
         pulse = 0;
+
+        limit = new ArrayList<>();
+        limit.add(0.6f);
 
         chart.setTouchEnabled(false);
         chart.setDescription("");
@@ -120,11 +125,24 @@ public class MainActivity extends AppCompatActivity {
 
         Float fValue = Float.parseFloat(value);
 
+
+        Float mLimit = 0f;
+
+        for(Float f: limit){
+            mLimit += f;
+        }
+
+        mLimit = mLimit/limit.size() -0.03f;
+
         if(entryCount > 2) {
             float yLast1 = set.getEntryForIndex(entryCount - 2).getY();
             float yLast2 = set.getEntryForIndex(entryCount - 1).getY();
-            if (yLast1 < yLast2 && yLast2 > fValue && yLast2 > 0.6f) {
+            if (yLast1 < yLast2 && yLast2 > fValue && yLast2 > mLimit) {
                 pulse ++;
+                limit.add(yLast2);
+                if(limit.size() >= 7){
+                    limit.remove(0);
+                }
             }
         }
         
