@@ -142,6 +142,18 @@ public class MainActivity extends AppCompatActivity {
         chart.moveViewToX(data.getEntryCount());
     }
 
+    public void beatsPerMinute(){
+        if(timelapse == 0){
+            timelapse = System.nanoTime();
+        }else if((int)TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - timelapse)  >= 6){
+            msg.setVisibility(View.VISIBLE);
+            msg.setTextColor(Color.BLUE);
+            msg.setText("PPM: "+Double.toString(pulse*10.0));
+            pulse = 0;
+            timelapse = System.nanoTime();
+        }
+    }
+
     private class MyBroadcastReceiver extends BroadcastReceiver{
 
         @Override
@@ -261,15 +273,7 @@ public class MainActivity extends AppCompatActivity {
                 buff.delete(0, match.end());
             }
 
-            if(timelapse == 0){
-                timelapse = System.nanoTime();
-            }else if((int)TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - timelapse)  >= 6){
-                msg.setVisibility(View.VISIBLE);
-                msg.setTextColor(Color.BLUE);
-                msg.setText("PPM: "+Double.toString(pulse*10.0));
-                pulse = 0;
-                timelapse = System.nanoTime();
-            }
+            beatsPerMinute();
         }
     };
 
