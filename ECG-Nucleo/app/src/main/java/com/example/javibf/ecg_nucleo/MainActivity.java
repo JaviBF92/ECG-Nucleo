@@ -70,7 +70,7 @@ public class MainActivity extends AppCompatActivity {
         pulse = 0;
 
         limit = new ArrayList<>();
-        limit.add(0.6f);
+        limit.add(0.5f);
 
         chart.setTouchEnabled(false);
         chart.setDescription("");
@@ -164,6 +164,10 @@ public class MainActivity extends AppCompatActivity {
         if(timelapse == 0){
             timelapse = System.nanoTime();
         }else if((int)TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - timelapse)  >= 6){
+            if(pulse == 0){
+                limit.clear();
+                limit.add(0.5f);
+            }
             msg.setVisibility(View.VISIBLE);
             msg.setTextColor(Color.BLUE);
             msg.setText("PPM: "+Double.toString(pulse*10.0));
